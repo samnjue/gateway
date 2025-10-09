@@ -1,4 +1,4 @@
-package com.api.gateway.entities;
+package com.api.gateway.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
