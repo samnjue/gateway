@@ -6,8 +6,10 @@ import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Value;
 
 import javax.crypto.SecretKey;
+import jakarta.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
@@ -17,10 +19,22 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    private final SecretKey key = Keys.hmacShaKeyFor(
-            "ThisIsASecureSecretKeyForJWTThatIsAtLeast256BitsLong".getBytes(StandardCharsets.UTF_8)
-    );
-    private final long JWT_TOKEN_VALIDITY = 5 * 60 * 60 * 1000; // 5 hours
+    @Value("${jwt.secret}")
+    private String secret; 
+
+    private SecretKey key;
+
+    private final long JWT_TOKEN_VALIDITY = 5 * 60 * 60 * 1000;
+
+    @PostConstruct
+    public void init() {
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public <T> T getClaimFromToken(String token, Function<Claims, T> claimsResolver) {
+        final Claims claims = getAllClaimsFromToken(token);
+        return claimsResolver.apply(claims);
+    }
 
     public String getUsernameFromToken(String token) {
         return getClaimFromToken(token, Claims::getSubject);
@@ -30,16 +44,11 @@ public class JwtUtil {
         return getClaimFromToken(token, Claims::getExpiration);
     }
 
-    public <T> T getClaimFromToken(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = getAllClaimsFromToken(token);
-        return claimsResolver.apply(claims);
-    }
-
-    private Claims getAllClaimsFromToken(String token) {
+     private Claims getAllClaimsFromToken(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(key)
+                .setSigningKey(this.key) 
                 .build()
-                .parseClaimsJws(token)
+                .parseClaimsJws(token) 
                 .getBody();
     }
 
@@ -59,7 +68,7 @@ public class JwtUtil {
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + JWT_TOKEN_VALIDITY))
-                .signWith(key, SignatureAlgorithm.HS256)
+                .signWith(this.key, SignatureAlgorithm.HS256) 
                 .compact();
     }
 
