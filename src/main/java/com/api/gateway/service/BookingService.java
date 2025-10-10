@@ -4,6 +4,7 @@ import com.api.gateway.entity.Booking;
 import com.api.gateway.entity.Flight;
 import com.api.gateway.entity.Hotel;
 import com.api.gateway.entity.User;
+import com.api.gateway.util.LoggerUtil;
 import com.api.gateway.exception.ResourceNotFoundException;
 import com.api.gateway.repository.BookingRepository;
 import com.api.gateway.repository.UserRepository;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService; 
 //import java.util.Optional;
 
 @Service
@@ -23,6 +25,26 @@ public class BookingService {
     private final UserRepository userRepository;
     private final FlightService flightService;
     private final HotelService hotelService;
+    private final ExecutorService paymentExecutorService;
+
+    private void processPaymentAndLog(Booking booking) {
+        try {
+            Thread.sleep(2000); 
+        } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
+        }
+
+        boolean paymentSuccess = Math.random() > 0.05; 
+        
+        String message;
+        if (paymentSuccess) {
+            message = "SUCCESS: Booking ID " + booking.getId() + " paid successfully.";
+        } else {
+            message = "FAILURE: Booking ID " + booking.getId() + " payment failed.";
+        }
+        
+        LoggerUtil.log(message);
+    }
 
     @Transactional
     public Booking createBooking(Long userId, Long flightId, Long hotelId) {
@@ -70,9 +92,12 @@ public class BookingService {
         }
 
         booking.setTotalPrice(totalPrice);
-        booking.setStatus("CONFIRMED");
+        booking.setStatus("PENDING");
+        Booking savedBooking = bookingRepository.save(booking);
 
-        return bookingRepository.save(booking);
+        paymentExecutorService.submit(() -> processPaymentAndLog(savedBooking));
+
+        return savedBooking;
     }
 
     public List<Booking> getBookingByUser(Long userId) {
