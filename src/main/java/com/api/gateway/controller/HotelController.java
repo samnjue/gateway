@@ -1,11 +1,13 @@
 package com.api.gateway.controller;
 
-import com.api.gateway.entity.Hotel;
+//import com.api.gateway.entity.Hotel;
 import com.api.gateway.service.HotelService;
+import com.api.gateway.dto.HotelDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -17,20 +19,20 @@ public class HotelController {
     private final HotelService hotelService;
 
     @PostMapping
-    public ResponseEntity<Hotel> createHotel(@RequestBody Hotel hotel) {
-        Hotel newHotel = hotelService.createHotel(hotel);
+    public ResponseEntity<HotelDTO> createHotel(@Valid @RequestBody HotelDTO dto) {
+        HotelDTO newHotel = hotelService.createHotel(dto);
         return new ResponseEntity<>(newHotel, HttpStatus.CREATED);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Hotel> getHotelById(@PathVariable Long id) {
+   @GetMapping("/{id}")
+    public ResponseEntity<HotelDTO> getHotelById(@PathVariable Long id) {
         return hotelService.getHotelById(id)
-                    .map(hotel -> new ResponseEntity<>(hotel, HttpStatus.OK))
-                    .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+                .map(dto -> new ResponseEntity<>(dto, HttpStatus.OK))
+                .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @GetMapping("/search")
-    public List<Hotel> searchHotels(@RequestParam String location) {
-        return  hotelService.searchHotels(location);
+    public List<HotelDTO> searchHotels(@RequestParam String location) {
+        return hotelService.searchHotels(location);
     }
 }

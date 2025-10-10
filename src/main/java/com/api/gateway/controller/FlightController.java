@@ -1,11 +1,13 @@
 package com.api.gateway.controller;
 
-import com.api.gateway.entity.Flight;
+//import com.api.gateway.entity.Flight;
 import com.api.gateway.service.FlightService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.api.gateway.dto.FlightDTO;   
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -17,20 +19,23 @@ public class FlightController {
     private final FlightService flightService;
 
     @PostMapping
-    public ResponseEntity<Flight> createFlight(@RequestBody Flight flight) {
-        Flight newFlight = flightService.createFlight(flight);
+    public ResponseEntity<FlightDTO> createFlight(@Valid @RequestBody FlightDTO dto) {
+        FlightDTO newFlight = flightService.createFlight(dto);
         return new ResponseEntity<>(newFlight, HttpStatus.CREATED);
     }   
 
     @GetMapping("/{id}")
-    public ResponseEntity<Flight> getFlightByid(@PathVariable Long id) {
-        return flightService.getFlightById(id)
-                    .map(flight -> new ResponseEntity<>(flight, HttpStatus.OK))
-                    .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    public ResponseEntity<FlightDTO> getFlightByid(@PathVariable Long id) {
+        FlightDTO dto = flightService.getFlightById(id);
+        if (dto != null) {
+            return new ResponseEntity<>(dto, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 
     @GetMapping("/search")
-    public List<Flight> searchFlights(@RequestParam String origin) {
+    public List<FlightDTO> searchFlights(@RequestParam String origin) {
         return flightService.searchFlights(origin);
     }
 }

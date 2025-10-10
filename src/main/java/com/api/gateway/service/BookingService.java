@@ -4,6 +4,7 @@ import com.api.gateway.entity.Booking;
 import com.api.gateway.entity.Flight;
 import com.api.gateway.entity.Hotel;
 import com.api.gateway.entity.User;
+import com.api.gateway.exception.ResourceNotFoundException;
 import com.api.gateway.repository.BookingRepository;
 import com.api.gateway.repository.UserRepository;
 
@@ -35,30 +36,30 @@ public class BookingService {
         double totalPrice = 0.0;
 
         if (flightId != null) {
-            Flight flight = flightService.getFlightById(flightId)
-                                    .orElseThrow(() -> new RuntimeException("Flight not found"));
+            Flight flight = flightService.getFlightEntityForBooking(flightId)
+                                    .orElseThrow(() -> new ResourceNotFoundException("Flight with id " + flightId + " not found"));
 
             if (flight.getAvailableSeats() < 1) {
                 throw new RuntimeException("No available seats on flight " + flight.getFlightNumber());
             } 
 
             flight.setAvailableSeats(flight.getAvailableSeats() - 1);
-            flightService.createFlight(flight);
+            flightService.saveFlightEntity(flight);
 
             booking.setFlight(flight);
             totalPrice += flight.getPrice();
         }
 
         if (hotelId != null) {
-            Hotel hotel = hotelService.getHotelById(hotelId)
-                                .orElseThrow(() -> new RuntimeException("Hotel not found"));
+            Hotel hotel = hotelService.getHotelEntityForBooking(hotelId)
+                                .orElseThrow(() -> new ResourceNotFoundException("Hotel with ID " + hotelId + " not found"));
 
             if (hotel.getAvailableRooms() < 1) {
                 throw new RuntimeException("No available rooms at hotel " + hotel.getName());
             }
             
             hotel.setAvailableRooms(hotel.getAvailableRooms() - 1);
-            hotelService.createHotel(hotel);
+            hotelService.saveHotelEntity(hotel);
 
             booking.setHotel(hotel);
             totalPrice += hotel.getPricePerNight();
